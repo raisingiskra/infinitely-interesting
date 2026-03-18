@@ -1,1 +1,1 @@
-# infinitely-interesting
+Welcome to Infinitely Interesting, a website packed full off random stuff. You'll never be bored. Between the orange juice themed clicker and mac 'n cheese flavors of the world, there's something here for everyone.

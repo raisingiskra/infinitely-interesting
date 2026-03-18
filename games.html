@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🍊 Orange Clicker Empire Deluxe 🍊</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Chewy&display=swap');
+</style>
+<style>
+body {
+    background-color: #ffae42;
+    font-family: 'Chewy', sans-serif;
+    text-align: center;
+    color: #ff6600;
+    margin: 0;
+    padding: 0;
+}
+h1 { margin-top: 20px; }
+
+/* Orange 🍊 */
+#orange {
+    font-size: 150px;
+    cursor: pointer;
+    display: inline-block;
+    margin: 20px auto;
+    position: relative;
+    transition: transform 0.1s, text-shadow 0.3s;
+    animation: pulse 1.2s infinite alternate;
+}
+#orange:active { transform: scale(1.2); text-shadow: 0 0 20px #ff9933; }
+
+/* Stats & Buttons */
+#stats { font-size: 20px; margin: 10px; }
+button {
+    background-color: #ff9933;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s, box-shadow 0.3s;
+}
+button:hover { 
+    background-color: #ff6600; 
+    box-shadow: 0 0 10px #ffcc66;
+}
+
+/* Messages & Achievements */
+#message { font-size: 18px; margin-top: 15px; color: green; min-height: 24px; }
+.upgrade-section { margin: 20px 0; }
+#achievements { text-align: left; width: 300px; margin: 20px auto; background: #ffe0b3; padding: 10px; border-radius: 10px; }
+.achievement { font-size: 14px; margin: 3px 0; }
+.ach-unlocked { color: green; font-weight: bold; }
+
+/* Floating 🍊 text */
+.floating {
+    position: absolute;
+    font-size: 20px;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+}
+@keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-50px); }
+}
+
+/* Pulse effect */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.1); }
+}
+
+/* Confetti */
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: confettiFall 1.5s linear forwards;
+}
+@keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity:1; }
+    100% { transform: translateY(200px) rotate(720deg); opacity:0; }
+}
+</style>
+</head>
+<body>
+
+<h1>🍊 Orange Clicker Empire Deluxe 🍊</h1>
+<div id="orange">🍊</div>
+
+<div id="stats">
+    Oranges: <span id="oranges">0</span><br>
+    Oranges per click: <span id="opc">1</span><br>
+    Oranges per second: <span id="ops">0</span><br>
+    Rebirths: <span id="rebirths">0</span>
+</div>
+
+<div class="upgrade-section">
+    <button id="upgradeClick">Upgrade Click (+1) - Cost: <span id="clickCost">10</span></button><br>
+    <button id="buyAutoClick">Buy Auto-Clicker (+1/sec) - Cost: <span id="autoCost">50</span></button><br>
+    <button id="buyFarm">Buy Orange Farm (+5/sec) - Cost: <span id="farmCost">200</span></button><br>
+    <button id="buyFactory">Buy Orange Factory (+20/sec) - Cost: <span id="factoryCost">1000</span></button><br>
+    <button id="buyEmpire">Build Citrus Empire (+100/sec) - Cost: <span id="empireCost">5000</span></button><br>
+    <button id="rebirthBtn">Rebirth (Requires 1000 Oranges)</button>
+</div>
+
+<div id="message"></div>
+
+<h2>Achievements 🏆</h2>
+<div id="achievements"></div>
+
+<script>
+// ===================== CORE GAME VARIABLES =====================
+let oranges = 0;
+let orangesPerClick = 1;
+let orangesPerSecond = 0;
+let clickUpgradeCost = 10;
+let autoClickerCost = 50;
+let farmCost = 200;
+let factoryCost = 1000;
+let empireCost = 5000;
+let rebirthCount = 0;
+
+// NEW FEATURES: Golden Oranges & Helpers
+let goldenOranges = 0;
+let squirrelSquad = 0;
+let juiceFactories = 0;
+let orangeDrones = 0;
+
+// ===================== ACHIEVEMENTS =====================
+let achievements = [
+    {name:"First Click", unlocked:false, condition:()=>oranges>=1},
+    {name:"100 Oranges", unlocked:false, condition:()=>oranges>=100},
+    {name:"1000 Oranges", unlocked:false, condition:()=>oranges>=1000},
+    {name:"First Rebirth", unlocked:false, condition:()=>rebirthCount>=1},
+    {name:"Auto-Clicker Owner", unlocked:false, condition:()=>orangesPerSecond>=1},
+    {name:"Orange Farm Owner", unlocked:false, condition:()=>orangesPerSecond>=5},
+    {name:"Factory Owner", unlocked:false, condition:()=>orangesPerSecond>=20},
+    {name:"Empire Builder", unlocked:false, condition:()=>orangesPerSecond>=100},
+    {name:"Ultimate Citrus Master", unlocked:false, condition:()=>oranges>=50000 && rebirthCount>=5},
+    {name:"Golden Orange Collector", unlocked:false, condition:()=>goldenOranges>=1},
+    {name:"Squirrel Master", unlocked:false, condition:()=>squirrelSquad>=5},
+    {name:"Factory Magnate", unlocked:false, condition:()=>juiceFactories>=3},
+    {name:"Drone Commander", unlocked:false, condition:()=>orangeDrones>=2}
+];
+
+// ===================== UI UPDATE FUNCTIONS =====================
+function updateUI() {
+    document.getElementById('oranges').textContent = Math.floor(oranges);
+    document.getElementById('opc').textContent = orangesPerClick.toFixed(1);
+    document.getElementById('ops').textContent = orangesPerSecond.toFixed(1);
+    document.getElementById('clickCost').textContent = clickUpgradeCost;
+    document.getElementById('autoCost').textContent = autoClickerCost;
+    document.getElementById('farmCost').textContent = farmCost;
+    document.getElementById('factoryCost').textContent = factoryCost;
+    document.getElementById('empireCost').textContent = empireCost;
+    document.getElementById('rebirths').textContent = rebirthCount;
+    updateAchievements();
+}
+
+function updateAchievements() {
+    const container = document.getElementById('achievements');
+    container.innerHTML = "";
+    achievements.forEach(a=>{
+        if(a.condition() && !a.unlocked){
+            a.unlocked=true;
+            showMessage("🏆 Achievement Unlocked: "+a.name);
+            throwConfetti();
+        }
+        const div = document.createElement('div');
+        div.className="achievement "+(a.unlocked?"ach-unlocked":"");
+        div.textContent=a.name;
+        container.appendChild(div);
+    });
+}
+
+// Floating text
+function showFloating(text) {
+    const orangeEl = document.getElementById('orange');
+    const span = document.createElement('span');
+    span.className = 'floating';
+    span.textContent = text;
+    orangeEl.appendChild(span);
+    setTimeout(()=>span.remove(),1000);
+}
+
+// Click particles
+function showClickParticles() {
+    for(let i=0; i<10; i++){
+        const particle = document.createElement('span');
+        particle.textContent = '🍊';
+        particle.style.position = 'absolute';
+        const rect = document.getElementById('orange').getBoundingClientRect();
+        particle.style.left = rect.left + rect.width/2 + 'px';
+        particle.style.top = rect.top + 'px';
+        particle.style.fontSize = `${10 + Math.random()*20}px`;
+        particle.style.opacity = 1;
+        particle.style.transition = 'all 0.7s ease-out';
+        document.body.appendChild(particle);
+        setTimeout(() => {
+            particle.style.transform = `translate(${Math.random()*100-50}px, ${-Math.random()*100}px) rotate(${Math.random()*360}deg)`;
+            particle.style.opacity = 0;
+        }, 10);
+        setTimeout(()=>particle.remove(), 700);
+    }
+}
+
+// Confetti
+function throwConfetti() {
+    for(let i=0; i<30; i++){
+        const confetti = document.createElement('div');
+        confetti.className='confetti';
+        confetti.style.left = (Math.random() * window.innerWidth) + 'px';
+        confetti.style.backgroundColor = `hsl(${Math.random()*360},100%,50%)`;
+        document.body.appendChild(confetti);
+        setTimeout(()=>confetti.remove(),1500);
+    }
+}
+
+// ===================== CLICK & UPGRADES =====================
+document.getElementById('orange').addEventListener('click', () => {
+    oranges += orangesPerClick;
+    showFloating("+" + orangesPerClick.toFixed(1) + " 🍊");
+    showClickParticles();
+    updateUI();
+    checkEnding();
+});
+
+// Upgrade buttons
+document.getElementById('upgradeClick').addEventListener('click',()=>{buyUpgrade('click');});
+document.getElementById('buyAutoClick').addEventListener('click',()=>{buyUpgrade('auto');});
+document.getElementById('buyFarm').addEventListener('click',()=>{buyUpgrade('farm');});
+document.getElementById('buyFactory').addEventListener('click',()=>{buyUpgrade('factory');});
+document.getElementById('buyEmpire').addEventListener('click',()=>{buyUpgrade('empire');});
+document.getElementById('rebirthBtn').addEventListener('click',rebirth);
+
+function buyUpgrade(type){
+    let cost=0;
+    switch(type){
+        case 'click': cost=clickUpgradeCost; break;
+        case 'auto': cost=autoClickerCost; break;
+        case 'farm': cost=farmCost; break;
+        case 'factory': cost=factoryCost; break;
+        case 'empire': cost=empireCost; break;
+    }
+    if(oranges>=cost){
+        oranges-=cost;
+        switch(type){
+            case 'click': orangesPerClick+=1+rebirthCount*0.5; clickUpgradeCost=Math.floor(clickUpgradeCost*1.5); showMessage("Click power increased!"); break;
+            case 'auto': orangesPerSecond+=1+rebirthCount*0.2; autoClickerCost=Math.floor(autoClickerCost*1.7); showMessage("Auto-Clicker purchased!"); break;
+            case 'farm': orangesPerSecond+=5+rebirthCount; farmCost=Math.floor(farmCost*2); showMessage("Orange Farm purchased!"); break;
+            case 'factory': orangesPerSecond+=20+rebirthCount*2; factoryCost=Math.floor(factoryCost*2.5); showMessage("Factory operational!"); break;
+            case 'empire': orangesPerSecond+=100+rebirthCount*5; empireCost=Math.floor(empireCost*3); showMessage("Citrus Empire built! 🍊🏰"); break;
+        }
+        updateUI();
+    } else {
+        showMessage("Not enough oranges!");
+    }
+}
+
+// Rebirth
+function rebirth() {
+    if (oranges >= 1000) {
+        rebirthCount++;
+        oranges = 0;
+        orangesPerClick = 1 + rebirthCount * 0.5;
+        orangesPerSecond = 0;
+        clickUpgradeCost = 10;
+        autoClickerCost = 50;
+        farmCost = 200;
+        factoryCost = 1000;
+        empireCost = 5000;
+        showMessage(`✨ Rebirth successful! Permanent bonuses x${rebirthCount}`);
+        throwConfetti();
+        updateUI();
+    } else {
+        showMessage("You need 1000 oranges to rebirth!");
+    }
+}
+
+// ===================== AUTO CLICKERS =====================
+setInterval(() => {
+    oranges += orangesPerSecond;
+    updateUI();
+    checkEnding();
+}, 1000);
+
+// Extended helpers
+function autoClickHelpers() {
+    oranges += squirrelSquad*1 + juiceFactories*5 + orangeDrones*10;
+    updateUI();
+}
+setInterval(autoClickHelpers,1000);
+
+// ===================== MESSAGES & ENDING =====================
+function showMessage(msg) {
+    const messageEl = document.getElementById('message');
+    messageEl.textContent = msg;
+    setTimeout(() => {
+        if (messageEl.textContent === msg) messageEl.textContent = "";
+    }, 3000);
+}
+
+function checkEnding() {
+    if (oranges >= 50000 && rebirthCount >= 5) {
+        showMessage("🏆 Ultimate Citrus Master! Your orange empire reigns supreme! 🍊🍊");
+        document.getElementById('orange').style.pointerEvents = 'none';
+        document.querySelectorAll('button').forEach(b => b.disabled = true);
+        throwConfetti();
+    }
+}
+
+// ===================== RANDOM EVENTS =====================
+function chaosEvent() {
+    const bonus = Math.floor(Math.random()*50 + 10);
+    oranges += bonus;
+    showMessage(`🍊 Chaos Bonus! +${bonus} Oranges!`);
+    throwConfetti();
+    updateUI();
+}
+setInterval(()=>{ if(Math.random()<0.3) chaosEvent(); }, 20000);
+
+// NEW: Rare events
+function rareEvent() {
+    const rand = Math.random();
+    if (rand < 0.05) { // Golden Orange
+        goldenOranges++;
+        const bonus = 50 + Math.floor(Math.random()*50);
+        oranges += bonus;
+        showMessage(`💛 Golden Orange! +${bonus} Oranges! Total Golden: ${goldenOranges}`);
+        throwConfetti();
+    } else if (rand < 0.08) { // Philosophical Orange
+        showMessage("💭 Philosophical Orange: The orange contemplates existence...");
+        document.getElementById('orange').style.pointerEvents = 'none';
+        setTimeout(()=>document.getElementById('orange').style.pointerEvents='auto',3000);
+    } else if (rand < 0.15) { // Orange Storm
+        const multiplier = 5;
+        showMessage(`🌪️ Orange Storm! Clicks x${multiplier} for 10s!`);
+        const originalClick = orangesPerClick;
+        orangesPerClick *= multiplier;
+        setTimeout(()=>orangesPerClick = originalClick,10000);
+    }
+}
+setInterval(()=>{ if(Math.random()<0.2) rareEvent(); }, 15000);
+
+// ===================== EXTRA HELPERS BUTTONS =====================
+function createExtraUpgrades() {
+    const section = document.querySelector('.upgrade-section');
+
+    const squirrelBtn = document.createElement('button');
+    squirrelBtn.textContent = `Hire Squirrel Squad (+1/sec) - Cost: 150`;
+    squirrelBtn.addEventListener('click',()=>{
+        if(oranges>=150){oranges-=150; squirrelSquad++; showMessage("🐿️ Squirrel Squad hired!"); updateUI();}
+        else showMessage("Not enough oranges!");
+    });
+    section.appendChild(squirrelBtn);
+
+    const factoryBtn = document.createElement('button');
+    factoryBtn.textContent = `Build Juice Factory (+5/sec) - Cost: 500`;
+    factoryBtn.addEventListener('click',()=>{
+        if(oranges>=500){oranges-=500; juiceFactories++; showMessage("🏭 Juice Factory operational!"); updateUI();}
+        else showMessage("Not enough oranges!");
+    });
+    section.appendChild(factoryBtn);
+
+    const droneBtn = document.createElement('button');
+    droneBtn.textContent = `Launch Orange Drone (+10/sec) - Cost: 1200`;
+    droneBtn.addEventListener('click',()=>{
+        if(oranges>=1200){oranges-=1200; orangeDrones++; showMessage("🚁 Orange Drone deployed!"); updateUI();}
+        else showMessage("Not enough oranges!");
+    });
+    section.appendChild(droneBtn);
+}
+createExtraUpgrades();
+
+// ===================== INITIAL UI =====================
+updateUI();
+
+</script>
+</body>
+</html>
